@@ -1,0 +1,10 @@
+; {{ ansible_managed }}
+; Reverzna zona {{ bind_rev_zona }}: adresa VM-a -> ime (PTR). Generiše se iz plan-adresa.yaml.
+$TTL {{ ttl }}
+@       IN SOA  ns1.{{ zona }}. hostmaster.{{ zona }}. (
+                1          ; serial (nema sekundarnog servera, pa se ne mora povećavati)
+                3600 600 1209600 {{ ttl }} )
+@       IN NS   ns1.{{ zona }}.
+{% for ime, v in vm | dictsort %}
+{{ v.ip.split('.')[3] }}      IN PTR  {{ ime }}.{{ zona }}.
+{% endfor %}

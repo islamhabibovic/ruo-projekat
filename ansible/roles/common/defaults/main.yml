@@ -1,0 +1,3 @@
+# osnovni alati na svim VM-ovima (dijagnostika mreže i DNS-a za odbranu)
+common_paketi: [ca-certificates, curl, bind9-dnsutils, netcat-openbsd, tcpdump]
+common_vremenska_zona: Europe/Sarajevo

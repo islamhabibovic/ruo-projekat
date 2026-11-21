@@ -1,0 +1,3 @@
+# Nešifrovane varijable grupe app. Tajne su u vault.yml (ansible-vault, nije u Gitu), a ovdje se
+# samo referenciraju, pa se iz koda vidi koje tajne postoje, ali ne i njihova vrijednost (AO-9, DO-9).
+db_password: "{{ vault_db_password }}"

@@ -1,0 +1,14 @@
+// {{ ansible_managed }}
+// Autoritativni server zone projekta: odgovara samo za svoje zone, ne razrješava tuđe (recursion no).
+options {
+    directory "/var/cache/bind";
+    listen-on { any; };
+    listen-on-v6 { none; };
+
+    recursion no;
+    allow-query { {{ libvirt_mreza.podmreza }}; localhost; };  // VM-ovi, kontejneri (NAT preko app1) i host
+    allow-transfer { none; };                                   // nema sekundarnog: AXFR nikome
+    dnssec-validation no;
+    minimal-responses yes;
+    version "nije javno";
+};

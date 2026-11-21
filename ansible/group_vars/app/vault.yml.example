@@ -1,0 +1,3 @@
+# Primjer sadržaja. Prava datoteka (vault.yml) se pravi naredbom `make vault`: lozinka se generiše
+# nasumično, datoteka se šifruje ansible-vault-om i NIJE u Gitu.
+vault_db_password: "PrimjerLozinke-NeKoristiti"

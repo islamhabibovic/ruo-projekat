@@ -1,0 +1,32 @@
+# make config: osnovna konfiguracija VM-ova, autoritativni DNS i Docker (AO-5).
+# Plan adresiranja (../plan-adresa.yaml) je zajednički s Terraformom.
+
+- name: Osnovna konfiguracija svih VM-ova
+  hosts: all
+  become: true
+  gather_facts: false
+  vars_files: [../plan-adresa.yaml]
+  pre_tasks:
+    - name: Čekaj da SSH postane dostupan
+      ansible.builtin.wait_for_connection: { timeout: 300 }
+    - name: Čekaj da cloud-init završi
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+    - name: Prikupi činjenice
+      ansible.builtin.setup:
+  roles:
+    - common
+
+- name: Autoritativni DNS server zone projekta (AO-7)
+  hosts: dns
+  become: true
+  vars_files: [../plan-adresa.yaml]
+  roles:
+    - bind
+
+- name: Docker host za kontejnere aplikacije
+  hosts: app
+  become: true
+  vars_files: [../plan-adresa.yaml]
+  roles:
+    - docker

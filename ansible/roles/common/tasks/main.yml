@@ -1,0 +1,18 @@
+- name: Osnovni paketi
+  ansible.builtin.apt:
+    name: "{{ common_paketi }}"
+    state: present
+    cache_valid_time: 3600
+
+- name: Vremenska zona
+  ansible.builtin.file:
+    src: "/usr/share/zoneinfo/{{ common_vremenska_zona }}"
+    dest: /etc/localtime
+    state: link
+    force: true
+
+- name: Prijava lozinkom je onemogućena (provjera onoga što je postavio cloud-init, AO-4)
+  ansible.builtin.command: sshd -T
+  register: sshd_t
+  changed_when: false
+  failed_when: "'passwordauthentication no' not in sshd_t.stdout"

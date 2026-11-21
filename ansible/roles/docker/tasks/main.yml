@@ -1,0 +1,27 @@
+# Docker iz Ubuntu repozitorija: docker.io + Compose v2 plugin (bez dodatnih apt izvora i ključeva)
+- name: Docker Engine i Compose plugin
+  ansible.builtin.apt:
+    name: [docker.io, docker-compose-v2]
+    state: present
+    cache_valid_time: 3600
+
+- name: Konfiguracija Docker daemona
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "10m", "max-file": "3" },
+        "live-restore": true
+      }
+  notify: restart docker
+
+- name: Docker radi i pokreće se pri boot-u
+  ansible.builtin.service: { name: docker, state: started, enabled: true }
+
+- name: Administrator smije koristiti docker bez sudo (dijagnostika)
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: true

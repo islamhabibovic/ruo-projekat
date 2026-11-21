@@ -1,0 +1,10 @@
+# ime TSIG ključa kojim Terraform mijenja zapise (AO-8)
+bind_tsig_kljuc: tf-projekat
+bind_tsig_datoteka: "/etc/bind/{{ bind_tsig_kljuc }}.key"
+# dinamička zona mora biti u /var/lib/bind (AppArmor dozvoljava named-u pisanje samo tu)
+bind_dinamicka_zona: "/var/lib/bind/db.{{ zona }}"
+# reverzna zona za /24 mrežu VM-ova: 10.60.0.0/24 -> 0.60.10.in-addr.arpa
+bind_rev_zona: "{{ (libvirt_mreza.podmreza.split('/')[0].split('.'))[0:3] | reverse | join('.') }}.in-addr.arpa"
+bind_rev_datoteka: "/etc/bind/zones/db.{{ bind_rev_zona }}"
+# lokalna kopija TSIG tajne za terraform/dns (nije u Gitu, .gitignore)
+bind_tsig_lokalno: "{{ playbook_dir }}/../.secrets/tsig-{{ bind_tsig_kljuc }}.secret"

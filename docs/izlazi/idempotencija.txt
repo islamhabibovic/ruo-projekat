@@ -1,0 +1,153 @@
+
+PLAY [Osnovna konfiguracija svih VM-ova] ***************************************
+
+TASK [Čekaj da SSH postane dostupan] *******************************************
+ok: [app1]
+ok: [ns1]
+
+TASK [Čekaj da cloud-init završi] **********************************************
+ok: [ns1]
+ok: [app1]
+
+TASK [Prikupi činjenice] *******************************************************
+ok: [ns1]
+ok: [app1]
+
+TASK [common : Osnovni paketi] *************************************************
+ok: [app1]
+ok: [ns1]
+
+TASK [common : Vremenska zona] *************************************************
+ok: [app1]
+ok: [ns1]
+
+TASK [common : Prijava lozinkom je onemogućena (provjera onoga što je postavio cloud-init, AO-4)] ***
+ok: [app1]
+ok: [ns1]
+
+PLAY [Autoritativni DNS server zone projekta (AO-7)] ***************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ns1]
+
+TASK [bind : BIND 9] ***********************************************************
+ok: [ns1]
+
+TASK [bind : TSIG ključ za Terraform (generiše se samo ako ne postoji)] ********
+ok: [ns1]
+
+TASK [bind : Prava nad TSIG ključem (čita ga samo named)] **********************
+ok: [ns1]
+
+TASK [bind : Direktorij za statičke zone] **************************************
+ok: [ns1]
+
+TASK [bind : Opcije servera (samo autoritativni, bez rekurzije)] ***************
+ok: [ns1]
+
+TASK [bind : Zone projekta] ****************************************************
+ok: [ns1]
+
+TASK [bind : Reverzna zona (statička, upravlja Ansible)] ***********************
+ok: [ns1]
+
+TASK [bind : Početni sadržaj dinamičke zone (SOA, NS, ns1)] ********************
+ok: [ns1]
+
+TASK [bind : Provjera cijele konfiguracije (named-checkconf -z)] ***************
+ok: [ns1]
+
+TASK [bind : named radi i pokreće se pri boot-u] *******************************
+ok: [ns1]
+
+TASK [bind : Primijeni izmjene konfiguracije prije nastavka] *******************
+
+TASK [bind : Pročitaj TSIG ključ] **********************************************
+ok: [ns1]
+
+TASK [bind : Lokalni direktorij za tajne (izvan Gita)] *************************
+ok: [ns1 -> localhost]
+
+TASK [bind : TSIG tajna za terraform/dns (lokalno, 0600)] **********************
+ok: [ns1 -> localhost]
+
+PLAY [Docker host za kontejnere aplikacije] ************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [app1]
+
+TASK [docker : Docker Engine i Compose plugin] *********************************
+ok: [app1]
+
+TASK [docker : Konfiguracija Docker daemona] ***********************************
+ok: [app1]
+
+TASK [docker : Docker radi i pokreće se pri boot-u] ****************************
+ok: [app1]
+
+TASK [docker : Administrator smije koristiti docker bez sudo (dijagnostika)] ***
+ok: [app1]
+
+PLAY RECAP *********************************************************************
+app1                       : ok=11   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ns1                        : ok=20   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+PLAY [Isporuka troslojne aplikacije] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [app1]
+
+TASK [app : Direktorij aplikacije] *********************************************
+ok: [app1]
+
+TASK [app : Kod aplikacije (frontend, backend, compose.yaml)] ******************
+ok: [app1]
+
+TASK [app : Direktorij za tajne (samo root)] ***********************************
+ok: [app1]
+
+TASK [app : Lozinka baze iz ansible-vault-a (AO-9)] ****************************
+ok: [app1]
+
+TASK [app : Okruženje za compose (.env iz plana adresiranja)] ******************
+ok: [app1]
+
+TASK [app : Aplikacija radi (docker compose up)] *******************************
+ok: [app1]
+
+TASK [app : Frontend odgovara na VM-u] *****************************************
+ok: [app1]
+
+PLAY RECAP *********************************************************************
+app1                       : ok=19   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ns1                        : ok=20   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+Ansible: changed=0 na svim hostovima
+terraform -chdir=terraform/vm plan -input=false -detailed-exitcode
+TF_VAR_tsig_secret="$(cat .secrets/tsig-tf-projekat.secret)" terraform -chdir=terraform/dns plan -input=false -detailed-exitcode
+libvirt_cloudinit_disk.init["ns1"]: Refreshing state... [id=/var/lib/libvirt/images/projekat-ns1-init.iso;9e66a9f0-86e0-46c2-a0c0-72999691245e]
+libvirt_volume.base: Refreshing state... [id=/var/lib/libvirt/images/projekat-ubuntu-noble-base.qcow2]
+libvirt_network.projekat: Refreshing state... [id=8adc92de-6d09-415d-b6c5-3027a125341b]
+libvirt_cloudinit_disk.init["app1"]: Refreshing state... [id=/var/lib/libvirt/images/projekat-app1-init.iso;367b711d-479d-4b60-a00e-18b40b00b80c]
+libvirt_volume.disk["app1"]: Refreshing state... [id=/var/lib/libvirt/images/projekat-app1.qcow2]
+libvirt_volume.disk["ns1"]: Refreshing state... [id=/var/lib/libvirt/images/projekat-ns1.qcow2]
+libvirt_domain.vm["ns1"]: Refreshing state... [id=eedcb1a8-c00b-47e2-be77-60920a044105]
+libvirt_domain.vm["app1"]: Refreshing state... [id=af58bbc3-c1d1-45c9-a4c9-566083fed53a]
+local_file.inventory: Refreshing state... [id=2e16b6b8795fd3a4143de5c8fbc0a72c23fdc9f4]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+dns_cname_record.www: Refreshing state... [id=www.projekat.ruo.lab.]
+dns_txt_record_set.vlasnik: Refreshing state... [id=projekat.ruo.lab.]
+dns_a_record_set.servis["backend"]: Refreshing state... [id=backend.projekat.ruo.lab.]
+dns_a_record_set.vm["app1"]: Refreshing state... [id=app1.projekat.ruo.lab.]
+dns_a_record_set.servis["frontend"]: Refreshing state... [id=frontend.projekat.ruo.lab.]
+dns_a_record_set.servis["db"]: Refreshing state... [id=db.projekat.ruo.lab.]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.

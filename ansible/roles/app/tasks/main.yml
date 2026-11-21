@@ -1,0 +1,56 @@
+# DO-5: slike se grade na ciljnoj VM iz koda u app/ (multi-stage Dockerfile za backend).
+
+- name: Direktorij aplikacije
+  ansible.builtin.file: { path: "{{ app_dir }}", state: directory, owner: root, group: root, mode: "0755" }
+
+- name: Kod aplikacije (frontend, backend, compose.yaml)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../app/"
+    dest: "{{ app_dir }}/"
+    owner: root
+    group: root
+    mode: preserve
+  register: app_kod
+
+- name: Direktorij za tajne (samo root)
+  ansible.builtin.file: { path: "{{ app_dir }}/secrets", state: directory, owner: root, group: root, mode: "0700" }
+
+# Docker secret se u kontejner montira kao datoteka; korisnici u kontejnerima (postgres uid 70,
+# app uid 10001) moraju je moći pročitati, a na hostu je štiti direktorij 0700.
+- name: Lozinka baze iz ansible-vault-a (AO-9)
+  ansible.builtin.copy:
+    dest: "{{ app_dir }}/secrets/db_password"
+    content: "{{ db_password }}"
+    owner: root
+    group: root
+    mode: "0444"
+  no_log: true
+
+- name: Okruženje za compose (.env iz plana adresiranja)
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+
+# Slike se ponovo grade samo kad se kod promijenio; inače se grade samo ako ne postoje.
+# Compose sam ponovo kreira kontejner kojem se promijenila slika ili konfiguracija.
+- name: Aplikacija radi (docker compose up)
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    state: present
+    build: "{{ 'always' if app_kod.changed else 'policy' }}"
+    remove_orphans: true
+    wait: true
+    wait_timeout: 300
+
+- name: Frontend odgovara na VM-u
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api/health/db
+    status_code: 200
+  register: zdravlje
+  retries: 10
+  delay: 3
+  until: zdravlje.status == 200
+  changed_when: false

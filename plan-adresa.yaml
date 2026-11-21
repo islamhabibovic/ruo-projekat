@@ -1,0 +1,43 @@
+# Plan adresiranja i imenovanja projekta (DO-3, DO-8).
+# Ovo je JEDINI izvor istine za adrese: čitaju ga Terraform (terraform/vm, terraform/dns) i Ansible
+# (vars_files u playbookovima). Izmjena adrese = izmjena ove datoteke + make all.
+
+# autoritativna DNS zona projekta (AO-7)
+zona: projekat.ruo.lab
+ttl: 60
+
+# libvirt mreža na kojoj su virtuelne mašine (NAT prema internetu, host je 10.60.0.1)
+libvirt_mreza:
+  ime: projekat
+  podmreza: 10.60.0.0/24
+
+# virtuelne mašine (AO-3): statičke adrese preko DHCP rezervacije u libvirt mreži
+vm:
+  ns1:
+    ip: 10.60.0.53
+    grupa: dns          # Ansible grupa (resursi VM-a su Terraform varijable: terraform/vm/variables.tf)
+  app1:
+    ip: 10.60.0.10
+    grupa: app
+
+# segmenti aplikacije (AO-6): Docker bridge mreže na app1, svaka s vlastitom podmrežom
+segmenti:
+# (web: frontend objavljuje port 80; app: izlaz prema ns1 za DNS upite; db: "internal", bez puta van)
+  web:
+    podmreza: 10.61.1.0/24
+  app:
+    podmreza: 10.61.2.0/24
+  db:
+    podmreza: 10.61.3.0/24
+
+# kontejneri: "segment" je segment na kojem servis prima zahtjeve; ta adresa ide u DNS
+kontejneri:
+  frontend:
+    segment: web
+    adrese: { web: 10.61.1.10, app: 10.61.2.20 }
+  backend:
+    segment: app
+    adrese: { app: 10.61.2.10, db: 10.61.3.20 }
+  db:
+    segment: db
+    adrese: { db: 10.61.3.10 }

@@ -1,0 +1,21 @@
+# Terraform: stanje i lokalni provideri nikad u Git (AO-3)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# tajne (AO-9): Vault lozinka, šifrovani vault (pravi se pri pokretanju), TSIG tajna, .env
+.vault_pass
+ansible/group_vars/*/vault.yml
+.secrets/
+.env
+*.key
+id_ed25519*
+
+# generisano
+ansible/inventory.ini
+__pycache__/
+*.retry
+*.log

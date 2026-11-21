@@ -1,0 +1,87 @@
+
+== DNS: zona projekat.ruo.lab na serveru 10.60.0.53
+$ dig @10.60.0.53 projekat.ruo.lab SOA
+ns1.projekat.ruo.lab. hostmaster.projekat.ruo.lab. 9 3600 600 1209600 60
+  PROŠLO  autoritativni odgovor (flag aa)
+  PROŠLO  NS zapis zone  [ns1.projekat.ruo.lab.]
+
+== Zapisi servisa (terraform/dns)
+  frontend.projekat.ruo.lab  A  10.61.1.10
+  PROŠLO  frontend.projekat.ruo.lab postoji
+  backend.projekat.ruo.lab   A  10.61.2.10
+  PROŠLO  backend.projekat.ruo.lab postoji
+  db.projekat.ruo.lab        A  10.61.3.10
+  PROŠLO  db.projekat.ruo.lab postoji
+  app1.projekat.ruo.lab      A  10.60.0.10
+  PROŠLO  app1.projekat.ruo.lab postoji
+  ns1.projekat.ruo.lab       A  10.60.0.53
+  PROŠLO  ns1.projekat.ruo.lab postoji
+  PROŠLO  www je CNAME na app1  [app1.projekat.ruo.lab.]
+  PROŠLO  www i app1 daju istu adresu  [10.60.0.10]
+  PROŠLO  PTR za app1  [app1.projekat.ruo.lab.]
+
+== Server je samo autoritativni
+  PROŠLO  tuđa domena (example.com): REFUSED  [status: REFUSED]
+  PROŠLO  nepostojeće ime: NXDOMAIN  [status: NXDOMAIN]
+  PROŠLO  prijenos zone (AXFR) je odbijen
+
+== TSIG ključ tf-projekat smije mijenjati SAMO zonu projekta (AO-8)
+  PROŠLO  UPDATE u zoni projekat.ruo.lab dozvoljen
+  $ nsupdate (zona 0.60.10.in-addr.arpa) -> update failed: REFUSED
+  PROŠLO  UPDATE u reverznoj zoni odbijen (REFUSED)
+  PROŠLO  UPDATE bez TSIG ključa odbijen (REFUSED)
+
+Rezultat: 16 prošlo, 0 palo
+
+== Segmenti na app1 (Docker mreže)
+seg-web  10.61.1.0/24  internal=false  kontejneri: frontend 
+seg-app  10.61.2.0/24  internal=false  kontejneri: backend frontend 
+seg-db  10.61.3.0/24  internal=true  kontejneri: db backend 
+  PROŠLO  seg-db je internal (bez puta van segmenta)  [true]
+
+== Dozvoljeni tokovi: frontend -> backend -> baza (po DNS imenima)
+  PROŠLO  frontend -> backend.projekat.ruo.lab:8000
+  PROŠLO  backend  -> db.projekat.ruo.lab:5432
+
+== Zabranjeni tokovi (moraju pasti)
+  PROŠLO  frontend -> db.projekat.ruo.lab:5432 (frontend nema put do baze)
+  PROŠLO  frontend -> 10.61.3.10:5432 (ni direktno po adresi)
+  PROŠLO  baza -> internet (seg-db je internal)
+
+== Objavljeni portovi: izvana je dostupan samo frontend
+db	5432/tcp
+frontend	0.0.0.0:80->80/tcp, [::]:80->80/tcp
+backend	8000/tcp
+  PROŠLO  baza nema objavljen port  []
+  PROŠLO  backend nema objavljen port  []
+  PROŠLO  host -> app1:80   (frontend)
+  PROŠLO  host -> app1:8000 (backend)
+  PROŠLO  host -> app1:5432 (baza)
+
+Rezultat: 11 prošlo, 0 palo
+www.projekat.ruo.lab -> 10.60.0.10 (razriješeno na ns1)
+
+== Aplikacija kroz frontend (jedini ulaz)
+  PROŠLO  GET / (frontend)  [200]
+  {"baza":"db.projekat.ruo.lab","status":"ok"}
+  PROŠLO  frontend -> backend -> baza (/api/health/db)
+
+== AO-10: podaci preživljavaju ponovno kreiranje kontejnera baze
+  POST: {"id":2,"kreirano":"2026-11-21T18:28:22.176853+00:00","tekst":"test-postojanosti-1795285701"}
+  PROŠLO  bilješka upisana
+  $ docker compose rm -sf db && docker compose up -d --wait db
+  kontejner baze: 5b64e411882a -> 64abe6abe21a
+  PROŠLO  kontejner baze je novi
+  PROŠLO  bilješka postoji nakon ponovnog kreiranja
+
+Rezultat: 5 prošlo, 0 palo
+
+== IP adrese u kodu aplikacije (app/)
+  PROŠLO  app/ ne sadrži nijednu adresu komponente (samo DNS imena)
+
+== Datoteke koje ne smiju biti u Gitu (AO-9)
+  (nije Git repozitorij, preskačem)
+
+Rezultat: 1 prošlo, 0 palo
+
+SVI TESTOVI SU PROŠLI

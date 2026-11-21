@@ -1,0 +1,7 @@
+# make deploy: isporuka i pokretanje aplikacije (frontend, backend, baza) na app hostovima.
+- name: Isporuka troslojne aplikacije
+  hosts: app
+  become: true
+  vars_files: [../plan-adresa.yaml]
+  roles:
+    - app

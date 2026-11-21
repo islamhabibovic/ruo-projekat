@@ -1,0 +1,10 @@
+# GENERISANO: terraform/vm (local_file.inventory). Ne mijenjati ručno, nije u Gitu.
+%{ for grupa, hostovi in grupe ~}
+[${grupa}]
+%{ for ime, ip in hostovi ~}
+${ime} ansible_host=${ip}
+%{ endfor ~}
+
+%{ endfor ~}
+[all:vars]
+ansible_user=${admin_user}

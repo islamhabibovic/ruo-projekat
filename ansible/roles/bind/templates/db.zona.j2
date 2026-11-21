@@ -1,0 +1,12 @@
+; Početni sadržaj zone {{ zona }} (Ansible, samo pri prvom kreiranju).
+; Zapise servisa (frontend, backend, db, app1, www) dodaje terraform/dns. Serial povećava BIND pri UPDATE-u.
+$TTL {{ ttl }}
+$ORIGIN {{ zona }}.
+@       IN SOA  ns1.{{ zona }}. hostmaster.{{ zona }}. (
+                1          ; serial
+                3600       ; refresh
+                600        ; retry
+                1209600    ; expire
+                {{ ttl }} )        ; negativni TTL
+@       IN NS   ns1.{{ zona }}.
+ns1     IN A    {{ vm.ns1.ip }}

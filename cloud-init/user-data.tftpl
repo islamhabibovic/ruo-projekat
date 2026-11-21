@@ -1,0 +1,34 @@
+#cloud-config
+# AO-4: početna konfiguracija VM-a. Samo bootstrap (korisnik, SSH, osnovni paket za Ansible);
+# sve ostalo radi Ansible (AO-5). Vrijednosti (ime, korisnik, SSH ključ) popunjava Terraform (templatefile).
+hostname: ${hostname}
+fqdn: ${fqdn}
+prefer_fqdn_over_hostname: false
+
+users:
+  - name: ${admin_user}
+    gecos: Administrator projekta (Terraform/Ansible)
+    groups: [sudo]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true            # korisnik nema lozinku
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+ssh_pwauth: false                # prijava lozinkom onemogućena
+disable_root: true
+
+# dodatno učvršćivanje: sshd odbija lozinke i root čak i ako bi se konfiguracija slike promijenila
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-projekat.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+
+package_update: true
+packages: [python3, python3-apt]
+
+runcmd:
+  - systemctl reload ssh || systemctl reload sshd || true

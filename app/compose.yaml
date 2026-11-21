@@ -1,0 +1,88 @@
+# Troslojna aplikacija (AO-1): frontend → backend → baza, svaki sloj u svom kontejneru.
+# Segmenti (AO-6) su Docker mreže s fiksnim podmrežama; kontejner je samo na mrežama koje mu trebaju:
+#
+#   seg-web (frontend)   seg-app (frontend, backend)   seg-db (backend, db; internal)
+#
+# Sve vrijednosti ${...} dolaze iz .env koji Ansible generiše iz plan-adresa.yaml (rola app),
+# pa u ovoj datoteci nema nijedne IP adrese. Lozinka baze je Docker secret (datoteka, nije u Gitu).
+name: projekat
+
+services:
+  frontend:
+    build: ./frontend
+    image: projekat/frontend:${APP_VERZIJA}
+    container_name: frontend
+    environment:
+      BACKEND_HOST: backend.${ZONA}
+    ports:
+      - "80:80"                         # jedini objavljeni port cijelog sistema
+    dns: ["${DNS_SERVER}"]              # upiti za zonu projekta idu na BIND (ns1)
+    dns_search: ["${ZONA}"]
+    networks:
+      web: { ipv4_address: "${FRONTEND_WEB_IP}" }
+      app: { ipv4_address: "${FRONTEND_APP_IP}" }
+    depends_on:
+      backend: { condition: service_healthy }
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    image: projekat/backend:${APP_VERZIJA}
+    container_name: backend
+    environment:
+      DB_HOST: db.${ZONA}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    dns: ["${DNS_SERVER}"]
+    dns_search: ["${ZONA}"]
+    networks:
+      app: { ipv4_address: "${BACKEND_APP_IP}" }
+      db: { ipv4_address: "${BACKEND_DB_IP}" }
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data # AO-10: podaci prežive ponovno kreiranje kontejnera
+    networks:
+      db: { ipv4_address: "${DB_DB_IP}" }
+    # nema "ports": baza nema objavljen port (AO-6)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+
+volumes:
+  pgdata:
+    name: projekat-pgdata
+
+networks:
+  web:
+    name: seg-web
+    driver_opts: { com.docker.network.bridge.name: br-web }
+    ipam: { config: [{ subnet: "${SEG_WEB_SUBNET}" }] }
+  app:
+    name: seg-app
+    driver_opts: { com.docker.network.bridge.name: br-app }
+    ipam: { config: [{ subnet: "${SEG_APP_SUBNET}" }] }
+  db:
+    name: seg-db
+    internal: true                      # bez izlaza van segmenta i bez rute prema drugim segmentima
+    driver_opts: { com.docker.network.bridge.name: br-db }
+    ipam: { config: [{ subnet: "${SEG_DB_SUBNET}" }] }

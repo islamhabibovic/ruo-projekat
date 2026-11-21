@@ -1,0 +1,36 @@
+
+== 1. Ručna izmjena mimo koda: db dobija pogrešnu adresu, backend se briše
+$ nsupdate: update delete db.projekat.ruo.lab A; update add db.projekat.ruo.lab 60 A 10.61.3.99; update delete backend.projekat.ruo.lab A
+db: 10.61.3.99   backend: ''
+
+== 2. terraform plan otkriva drift
+  + create
+  ~ update in-place
+  # dns_a_record_set.servis["backend"] will be created
+  + resource "dns_a_record_set" "servis" {
+      + addresses = [
+          + "10.61.2.10",
+      + id        = (known after apply)
+      + name      = "backend"
+      + ttl       = 60
+      + zone      = "projekat.ruo.lab."
+  # dns_a_record_set.servis["db"] will be updated in-place
+  ~ resource "dns_a_record_set" "servis" {
+      ~ addresses = [
+          - "10.61.3.99",
+          + "10.61.3.10",
+        # (2 unchanged attributes hidden)
+Plan: 1 to add, 1 to change, 0 to destroy.
+
+== 3. terraform apply vraća stanje iz koda
+dns_a_record_set.servis["backend"]: Creating...
+dns_a_record_set.servis["db"]: Modifying... [id=db.projekat.ruo.lab.]
+dns_a_record_set.servis["backend"]: Creation complete after 0s [id=backend.projekat.ruo.lab.]
+dns_a_record_set.servis["db"]: Modifications complete after 0s [id=db.projekat.ruo.lab.]
+Apply complete! Resources: 1 added, 1 changed, 0 destroyed.
+db: 10.61.3.10   backend: 10.61.2.10
+
+== 4. Ponovni plan: bez promjena
+  PROŠLO  terraform plan: No changes
+
+Rezultat: 1 prošlo, 0 palo

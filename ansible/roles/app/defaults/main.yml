@@ -1,0 +1,4 @@
+app_dir: /opt/projekat
+app_verzija: "1.0"
+db_name: biljeske
+db_user: biljeske

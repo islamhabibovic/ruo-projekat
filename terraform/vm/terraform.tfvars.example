@@ -1,0 +1,6 @@
+# Primjer: kopirati u terraform.tfvars (nije u Gitu) za izmjenu parametara bez diranja koda.
+# vm_resursi = {
+#   ns1  = { memorija_mb = 512,  vcpu = 1, disk_gb = 8 }
+#   app1 = { memorija_mb = 3072, vcpu = 2, disk_gb = 15 }
+# }
+# ssh_public_key_path = "~/.ssh/id_ed25519.pub"

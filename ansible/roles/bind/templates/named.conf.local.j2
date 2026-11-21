@@ -1,0 +1,16 @@
+// {{ ansible_managed }}
+include "{{ bind_tsig_datoteka }}";
+
+// Zona projekta (AO-7). Zapise servisa mijenja SAMO Terraform, ključem {{ bind_tsig_kljuc }} (AO-8).
+// update-policy: ključ smije sve tipove zapisa, ali samo unutar ove zone (zonesub).
+zone "{{ zona }}" {
+    type primary;
+    file "{{ bind_dinamicka_zona }}";
+    update-policy { grant {{ bind_tsig_kljuc }} zonesub ANY; };
+};
+
+// Reverzna zona mreže VM-ova: statička, nema update-policy, pa je ni TSIG ključ ne može mijenjati.
+zone "{{ bind_rev_zona }}" {
+    type primary;
+    file "{{ bind_rev_datoteka }}";
+};

@@ -1,0 +1,28 @@
+# Frontend (nginx): statične datoteke + reverse proxy /api/ prema backendu.
+# Ulaz nginx slike (envsubst) zamjenjuje ${...} pri pokretanju kontejnera:
+#   BACKEND_HOST          DNS ime backenda iz zone projekta (AO-7), npr. backend.projekat.ruo.lab
+#   NGINX_LOCAL_RESOLVERS resolver kontejnera iz /etc/resolv.conf (Dockerov ugrađeni DNS, koji
+#                         upite za zonu projekta prosljeđuje BIND serveru). Nema IP adrese u kodu.
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # ime se razrješava pri svakom zahtjevu (poštuje TTL), pa izmjena DNS zapisa ne traži restart
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=30s ipv6=off;
+    set $backend http://${BACKEND_HOST}:8000;
+
+    location /api/ {
+        proxy_pass $backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_connect_timeout 3s;
+    }
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+}
