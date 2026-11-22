@@ -5,7 +5,7 @@ subtitle: "Dizajnerske odluke (DO-1 do DO-9) i zapisi arhitektonskih odluka (ADR
 
 | | |
 |---|---|
-| **Student** | Islam [PREZIME] |
+| **Student** | Islam Habibović |
 | **Predmet** | Računarstvo u oblaku, II ciklus, III semestar, 2026/27 |
 | **Nastavnik / asistent** | V. prof. dr. Đulaga Hadžić / ass. Mr. Adin Jahić |
 | **Git repozitorij** | https://github.com/islamhabibovic/ruo-projekat |
