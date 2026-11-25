@@ -13,7 +13,7 @@ variable "storage_pool" {
 variable "base_image_url" {
   description = "Bazna cloud slika (DO-4)"
   type        = string
-  default     = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  default     = "~/.cache/projekat/noble-server-cloudimg-amd64.img"
 }
 
 variable "admin_user" {

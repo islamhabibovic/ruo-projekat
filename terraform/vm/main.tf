@@ -44,7 +44,7 @@ resource "libvirt_volume" "base" {
   name   = "projekat-ubuntu-noble-base.qcow2"
   pool   = var.storage_pool
   format = "qcow2"
-  source = var.base_image_url
+  source = startswith(var.base_image_url, "http") ? var.base_image_url : pathexpand(var.base_image_url)
 }
 
 # disk svake VM je copy-on-write potomak bazne slike
