@@ -86,6 +86,9 @@ resource "libvirt_domain" "vm" {
   network_interface {
     network_id     = libvirt_network.projekat.id
     hostname       = each.key
+    # stalna MAC adresa izvedena iz IP-a: nova VM (npr. nakon promjene memorije) zadrži istu
+    # mrežnu konfiguraciju na disku i istu DHCP rezervaciju
+    mac            = upper(format("52:54:00:%02x:%02x:%02x", [for o in slice(split(".", each.value.ip), 1, 4) : tonumber(o)]...))
     addresses      = [each.value.ip]
     wait_for_lease = true
   }
